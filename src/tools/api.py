@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import requests
+import akshare as ak
+import datetime
 
 from data.cache import get_cache
 from data.models import (
@@ -20,8 +22,9 @@ from data.models import (
 _cache = get_cache()
 
 
-def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
+def get_prices(ticker: str, assets: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
+    end_date = end_date.replace("-", "")
     # Check cache first
     if cached_data := _cache.get_prices(ticker):
         # Filter cached data by date range and convert to Price objects
@@ -30,22 +33,33 @@ def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
             return filtered_data
 
     # If not in cache or no data in range, fetch from API
-    headers = {}
-    if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
-        headers["X-API-KEY"] = api_key
+    if assets == "A":
+        df = ak.stock_zh_a_hist(ticker, start_date="20150401", end_date=end_date, adjust="qfq")
+        df.rename(columns={"日期": "trade_date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "vol", "成交额": "amount", "涨跌幅": "pct_chg", "涨跌额": "change", "换手率": "turn_over"}, inplace=True)
+        df = df.sort_index(ascending=True)
+    elif assets == "US":
+        pass
+    else:
+        df = ak.futures_zh_minute_sina(symbol=ticker, period=15)
+        df.rename(columns={"datetime": "trade_date", "volume": "vol", "成交额": "amount"}, inplace=True)
+        df = df.loc[df['trade_date'] <= end_date + " 23:59:00"]
+        df['trade_date'] = pd.to_datetime(df['trade_date'], errors='coerce', format='%Y-%m-%d %H:%M:%S')
+        df = df.sort_index(ascending=True)
 
-    url = f"https://api.financialdatasets.ai/prices/?ticker={ticker}&interval=day&interval_multiplier=1&start_date={start_date}&end_date={end_date}"
-    response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
+    if df.empty:
+        raise Exception(f"Error fetching data: {ticker} - {end_date}")
 
-    # Parse response with Pydantic model
-    price_response = PriceResponse(**response.json())
-    prices = price_response.prices
-
-    if not prices:
-        return []
-
+    prices = [
+        Price(
+            time=row['trade_date'].strftime("%Y%m%d%H%M%S") if assets != "A" and assets != "US" else row['trade_date'].strftime("%Y%m%d"),
+            open=row['open'],
+            high=row['high'],
+            low=row['low'],
+            close=row['close'],
+            volume=row['vol']
+        )
+        for _, row in df.iterrows()
+    ]
     # Cache the results as dicts
     _cache.set_prices(ticker, [p.model_dump() for p in prices])
     return prices
@@ -57,6 +71,8 @@ def get_financial_metrics(
     period: str = "ttm",
     limit: int = 10,
 ) -> list[FinancialMetrics]:
+    return []
+
     """Fetch financial metrics from cache or API."""
     # Check cache first
     if cached_data := _cache.get_financial_metrics(ticker):
@@ -97,6 +113,8 @@ def search_line_items(
     limit: int = 10,
 ) -> list[LineItem]:
     """Fetch line items from API."""
+    return []
+
     # If not in cache or insufficient data, fetch from API
     headers = {}
     if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
@@ -130,6 +148,8 @@ def get_insider_trades(
     start_date: str | None = None,
     limit: int = 1000,
 ) -> list[InsiderTrade]:
+    return []
+
     """Fetch insider trades from cache or API."""
     # Check cache first
     if cached_data := _cache.get_insider_trades(ticker):
@@ -193,6 +213,7 @@ def get_company_news(
     start_date: str | None = None,
     limit: int = 1000,
 ) -> list[CompanyNews]:
+    return []
     """Fetch company news from cache or API."""
     # Check cache first
     if cached_data := _cache.get_company_news(ticker):
@@ -250,7 +271,6 @@ def get_company_news(
     return all_news
 
 
-
 def get_market_cap(
     ticker: str,
     end_date: str,
@@ -277,6 +297,6 @@ def prices_to_df(prices: list[Price]) -> pd.DataFrame:
 
 
 # Update the get_price_data function to use the new functions
-def get_price_data(ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
-    prices = get_prices(ticker, start_date, end_date)
+def get_price_data(ticker: str, assets: str, start_date: str, end_date: str) -> pd.DataFrame:
+    prices = get_prices(ticker, assets, start_date, end_date)
     return prices_to_df(prices)

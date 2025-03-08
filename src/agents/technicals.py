@@ -23,6 +23,7 @@ def technical_analyst_agent(state: AgentState):
     5. Statistical Arbitrage Signals
     """
     data = state["data"]
+    assets = data["assets"]
     start_date = data["start_date"]
     end_date = data["end_date"]
     tickers = data["tickers"]
@@ -36,6 +37,7 @@ def technical_analyst_agent(state: AgentState):
         # Get the historical price data
         prices = get_prices(
             ticker=ticker,
+            assets=assets,
             start_date=start_date,
             end_date=end_date,
         )

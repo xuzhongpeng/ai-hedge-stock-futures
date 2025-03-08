@@ -52,6 +52,7 @@ def parse_hedge_fund_response(response):
 ##### Run the Hedge Fund #####
 def run_hedge_fund(
     tickers: list[str],
+    assets: str,
     start_date: str,
     end_date: str,
     portfolio: dict,
@@ -80,6 +81,7 @@ def run_hedge_fund(
                 ],
                 "data": {
                     "tickers": tickers,
+                    "assets": assets,
                     "portfolio": portfolio,
                     "start_date": start_date,
                     "end_date": end_date,
@@ -155,6 +157,7 @@ if __name__ == "__main__":
         help="Initial margin requirement. Defaults to 0.0"
     )
     parser.add_argument("--tickers", type=str, required=True, help="Comma-separated list of stock ticker symbols")
+    parser.add_argument("--type", type=str, default="A", help="Specify the asset type (e.g., Chinese stocks, US stocks, futures)")
     parser.add_argument(
         "--start-date",
         type=str,
@@ -170,6 +173,7 @@ if __name__ == "__main__":
 
     # Parse tickers from comma-separated string
     tickers = [ticker.strip() for ticker in args.tickers.split(",")]
+    assets = args.type.strip()
 
     # Select analysts
     selected_analysts = None
@@ -277,6 +281,7 @@ if __name__ == "__main__":
     # Run the hedge fund
     result = run_hedge_fund(
         tickers=tickers,
+        assets=assets,
         start_date=start_date,
         end_date=end_date,
         portfolio=portfolio,

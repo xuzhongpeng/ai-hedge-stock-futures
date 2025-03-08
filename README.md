@@ -1,3 +1,9 @@
+# Preface
+Thanks to the project [AI Hedge Fund](https://github.com/virattt/ai-hedge-fund). However, the original project was not tailored for Chinese investors and relied on prohibitively expensive data sources. In this restructuring, we preserve the core features of the original project while extending support for AI agent analysis of Chinese stocks, Chinese futures, and U.S. stocks. This adaptation aims to make the framework accessible and practical for investors in China while maintaining its foundational design.
+
+感谢开源项目[AI Hedge Fund](https://github.com/virattt/ai-hedge-fund)，但是原来的项目并不适合中国的投资者且数据源过于昂贵，重构该项目并保留原有项目基本信息，使用免费的[akshare](https://akshare.akfamily.xyz/tutorial.html)数据源，支持中国股票、中国期货、美国股票的AI agents分析
+
+
 # AI Hedge Fund
 
 This is a proof of concept for an AI-powered hedge fund.  The goal of this project is to explore the use of AI to make trading decisions.  This project is for **educational** purposes only and is not intended for real trading or investment.
@@ -79,16 +85,20 @@ OPENAI_API_KEY=your-openai-api-key
 # Get your Groq API key from https://groq.com/
 GROQ_API_KEY=your-groq-api-key
 
-# For getting financial data to power the hedge fund
+# For running LLMs hosted by deepseek
+# Get your deepseek API key from https://platform.deepseek.com/api_keys
+DEEPSEEK_API_KEY=your-deepseek-api-key
+
+# For getting financial data to power the hedge fund, non-essential (Now we support [akshare](https://akshare.akfamily.xyz/tutorial.html))
 # Get your Financial Datasets API key from https://financialdatasets.ai/
 FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
 ```
 
-**Important**: You must set `OPENAI_API_KEY`, `GROQ_API_KEY`, or `ANTHROPIC_API_KEY` for the hedge fund to work.  If you want to use LLMs from all providers, you will need to set all API keys.
+**Important**: You must set `OPENAI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`, or `DEEPSEEK_API_KEY` for the hedge fund to work.  If you want to use LLMs from all providers, you will need to set all API keys.
 
 Financial data for AAPL, GOOGL, MSFT, NVDA, and TSLA is free and does not require an API key.
 
-For any other ticker, you will need to set the `FINANCIAL_DATASETS_API_KEY` in the .env file.
+For any other ticker, you will need to set the `FINANCIAL_DATASETS_API_KEY` in the .env file or [akshare](https://akshare.akfamily.xyz/tutorial.html) adapted order book id.
 
 ## Usage
 
@@ -102,19 +112,18 @@ poetry run python src/main.py --ticker AAPL,MSFT,NVDA
 
 You can also specify a `--show-reasoning` flag to print the reasoning of each agent to the console.
 
-```bash
-poetry run python src/main.py --ticker AAPL,MSFT,NVDA --show-reasoning
+```bash Chinese A shares
+poetry run python src/main.py --ticker 601360 --show-reasoning
 ```
-You can optionally specify the start and end dates to make decisions for a specific time period.
+You can optionally specify assets type (now we support A for Chinese A shares, US for U.S. stocks, and others for Chinese futures), the start and end dates to make decisions for a specific time period.
 
-```bash
-poetry run python src/main.py --ticker AAPL,MSFT,NVDA --start-date 2024-01-01 --end-date 2024-03-01 
-```
+```bash futurepoetry run python src/main.py --ticker JM2505 --assets futures --start-date 2024-01-01 --end-date 2025-03-01
+poetry run python src/main.py --ticker JM2505 --type futures --start-date 2024-01-01 --end-date 2025-03-01
 
 ### Running the Backtester
 
 ```bash
-poetry run python src/backtester.py --ticker AAPL,MSFT,NVDA
+poetry run python src/backtester.py --ticker 601360
 ```
 
 **Example Output:**

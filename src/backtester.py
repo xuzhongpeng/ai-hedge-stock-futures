@@ -31,6 +31,7 @@ class Backtester:
         self,
         agent: Callable,
         tickers: list[str],
+        assets: str,
         start_date: str,
         end_date: str,
         initial_capital: float,
@@ -42,6 +43,7 @@ class Backtester:
         """
         :param agent: The trading agent (Callable).
         :param tickers: List of tickers to backtest.
+        :param assets: List of assets type to backtest.
         :param start_date: Start date string (YYYY-MM-DD).
         :param end_date: End date string (YYYY-MM-DD).
         :param initial_capital: Starting portfolio cash.
@@ -52,6 +54,7 @@ class Backtester:
         """
         self.agent = agent
         self.tickers = tickers
+        self.assets = assets
         self.start_date = start_date
         self.end_date = end_date
         self.initial_capital = initial_capital
@@ -281,7 +284,7 @@ class Backtester:
 
         for ticker in self.tickers:
             # Fetch price data for the entire period, plus 1 year
-            get_prices(ticker, start_date_str, self.end_date)
+            get_prices(ticker, self.assets, start_date_str, self.end_date)
 
             # Fetch financial metrics
             get_financial_metrics(ticker, self.end_date, limit=10)
@@ -309,7 +312,8 @@ class Backtester:
         # Pre-fetch all data at the start
         self.prefetch_data()
 
-        dates = pd.date_range(self.start_date, self.end_date, freq="B")
+        df = get_price_data(self.tickers[0], self.assets, self.start_date, self.end_date)
+        dates = df.index.tolist()
         table_rows = []
         performance_metrics = {
             'sharpe_ratio': None,
@@ -329,9 +333,14 @@ class Backtester:
             self.portfolio_values = []
 
         for current_date in dates:
-            lookback_start = (current_date - timedelta(days=30)).strftime("%Y-%m-%d")
-            current_date_str = current_date.strftime("%Y-%m-%d")
-            previous_date_str = (current_date - timedelta(days=1)).strftime("%Y-%m-%d")
+            if self.assets == "A" or self.assets == "US":
+                lookback_start = (current_date - timedelta(days=30)).strftime("%Y%m%d")
+                current_date_str = current_date.strftime("%Y%m%d")
+                previous_date_str = (current_date - timedelta(days=1)).strftime("%Y%m%d")
+            else:
+                lookback_start = (current_date - timedelta(days=30)).strftime("%Y%m%d%H%M%S")
+                current_date_str = current_date.strftime("%Y%m%d%H%M%S")
+                previous_date_str = (current_date - timedelta(days=1)).strftime("%Y%m%d%H%M%S")
 
             # Skip if there's no prior day to look back (i.e., first date in the range)
             if lookback_start == current_date_str:
@@ -340,7 +349,7 @@ class Backtester:
             # Get current prices for all tickers
             try:
                 current_prices = {
-                    ticker: get_price_data(ticker, previous_date_str, current_date_str).iloc[-1]["close"]
+                    ticker: get_price_data(ticker, self.assets, previous_date_str, current_date_str).iloc[-1]["close"]
                     for ticker in self.tickers
                 }
             except Exception:
@@ -353,6 +362,7 @@ class Backtester:
             # ---------------------------------------------------------------
             output = self.agent(
                 tickers=self.tickers,
+                assets=self.assets,
                 start_date=lookback_start,
                 end_date=current_date_str,
                 portfolio=self.portfolio,
@@ -625,6 +635,7 @@ if __name__ == "__main__":
         required=False,
         help="Comma-separated list of stock ticker symbols (e.g., AAPL,MSFT,GOOGL)",
     )
+    parser.add_argument("--type", type=str, default="A", help="Specify the asset type (e.g., Chinese stocks, US stocks, futures)")
     parser.add_argument(
         "--end-date",
         type=str,
@@ -654,6 +665,7 @@ if __name__ == "__main__":
 
     # Parse tickers from comma-separated string
     tickers = [ticker.strip() for ticker in args.tickers.split(",")] if args.tickers else []
+    assets = args.type.strip()
 
     # Choose analysts
     selected_analysts = None
@@ -710,6 +722,7 @@ if __name__ == "__main__":
     backtester = Backtester(
         agent=run_hedge_fund,
         tickers=tickers,
+        assets=assets,
         start_date=args.start_date,
         end_date=args.end_date,
         initial_capital=args.initial_capital,

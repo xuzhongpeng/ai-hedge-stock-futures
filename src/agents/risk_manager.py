@@ -10,6 +10,7 @@ def risk_management_agent(state: AgentState):
     """Controls position sizing based on real-world risk factors for multiple tickers."""
     portfolio = state["data"]["portfolio"]
     data = state["data"]
+    assets = data["assets"]
     tickers = data["tickers"]
 
     # Initialize risk analysis for each ticker
@@ -21,6 +22,7 @@ def risk_management_agent(state: AgentState):
 
         prices = get_prices(
             ticker=ticker,
+            assets=assets,
             start_date=data["start_date"],
             end_date=data["end_date"],
         )
