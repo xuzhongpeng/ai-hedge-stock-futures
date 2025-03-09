@@ -49,6 +49,9 @@ def technical_analyst_agent(state: AgentState):
         # Convert prices to a DataFrame
         prices_df = prices_to_df(prices)
 
+        progress.update_status("technical_analyst_agent", ticker, "Calculating super trend signals")
+        super_trend_signals = calculate_super_trend_signals(prices_df)
+
         progress.update_status("technical_analyst_agent", ticker, "Calculating trend signals")
         trend_signals = calculate_trend_signals(prices_df)
 
@@ -66,11 +69,12 @@ def technical_analyst_agent(state: AgentState):
 
         # Combine all signals using a weighted ensemble approach
         strategy_weights = {
-            "trend": 0.25,
-            "mean_reversion": 0.20,
-            "momentum": 0.25,
-            "volatility": 0.15,
-            "stat_arb": 0.15,
+            "super_trend": 0.3,
+            "trend": 0.2,
+            "mean_reversion": 0.1,
+            "momentum": 0.2,
+            "volatility": 0.1,
+            "stat_arb": 0.1,
         }
 
         progress.update_status("technical_analyst_agent", ticker, "Combining signals")
@@ -134,6 +138,112 @@ def technical_analyst_agent(state: AgentState):
     return {
         "messages": state["messages"] + [message],
         "data": data,
+    }
+
+
+def get_supertrend(high, low, close, lookback, multiplier):
+    # ATR
+    tr1 = pd.DataFrame(high - low)
+    tr2 = pd.DataFrame(abs(high - close.shift(1)))
+    tr3 = pd.DataFrame(abs(low - close.shift(1)))
+    frames = [tr1, tr2, tr3]
+    tr = pd.concat(frames, axis = 1, join = 'inner').max(axis = 1)
+    atr = tr.ewm(lookback).mean()
+
+    # H/L AVG AND BASIC UPPER & LOWER BAND
+    hl_avg = (high + low) / 2
+    upper_band = (hl_avg + multiplier * atr).dropna()
+    lower_band = (hl_avg - multiplier * atr).dropna()
+
+    # FINAL UPPER BAND
+    final_bands = pd.DataFrame(columns = ['upper', 'lower'])
+    final_bands.iloc[:,0] = [x for x in upper_band - upper_band]
+    final_bands[final_bands.columns[1]] = final_bands[final_bands.columns[0]]
+    for i in range(len(final_bands)):
+        if i == 0:
+            final_bands.iloc[i,0] = 0
+        else:
+            if (upper_band.iloc[i] < final_bands.iloc[i-1,0]) | (close.iloc[i-1] > final_bands.iloc[i-1,0]):
+                final_bands.iloc[i,0] = upper_band.iloc[i]
+            else:
+                final_bands.iloc[i,0] = final_bands.iloc[i-1,0]
+
+    # FINAL LOWER BAND
+    for i in range(len(final_bands)):
+        if i == 0:
+            final_bands.iloc[i, 1] = 0
+        else:
+            if (lower_band.iloc[i] > final_bands.iloc[i-1,1]) | (close.iloc[i-1] < final_bands.iloc[i-1,1]):
+                final_bands.iloc[i,1] = lower_band.iloc[i]
+            else:
+                final_bands.iloc[i,1] = final_bands.iloc[i-1,1]
+
+    # SUPERTREND
+    supertrend = pd.DataFrame(columns = [f'supertrend_{lookback}'])
+    supertrend.iloc[:,0] = [x for x in final_bands['upper']]
+    for i in range(len(supertrend)):
+        if i == 0:
+            supertrend.iloc[i, 0] = 0
+        elif supertrend.iloc[i-1, 0] == final_bands.iloc[i-1, 0] and close.iloc[i] < final_bands.iloc[i, 0]:
+            supertrend.iloc[i, 0] = final_bands.iloc[i, 0]
+        elif supertrend.iloc[i-1, 0] == final_bands.iloc[i-1, 0] and close.iloc[i] > final_bands.iloc[i, 0]:
+            supertrend.iloc[i, 0] = final_bands.iloc[i, 1]
+        elif supertrend.iloc[i-1, 0] == final_bands.iloc[i-1, 1] and close.iloc[i] > final_bands.iloc[i, 1]:
+            supertrend.iloc[i, 0] = final_bands.iloc[i, 1]
+        elif supertrend.iloc[i-1, 0] == final_bands.iloc[i-1, 1] and close.iloc[i] < final_bands.iloc[i, 1]:
+            supertrend.iloc[i, 0] = final_bands.iloc[i, 0]
+
+    supertrend = supertrend.set_index(upper_band.index)
+    #supertrend = supertrend.dropna()[1:]
+    supertrend.iloc[0] = supertrend.iloc[1]
+
+    # ST UPTREND/DOWNTREND
+    upt = []
+    dt = []
+    close = close.iloc[len(close) - len(supertrend):]
+
+    for i in range(len(supertrend)):
+        if close.iloc[i] > supertrend.iloc[i, 0]:
+            upt.append(supertrend.iloc[i, 0])
+            dt.append(np.nan)
+        elif close.iloc[i] < supertrend.iloc[i, 0]:
+            upt.append(np.nan)
+            dt.append(supertrend.iloc[i, 0])
+        else:
+            upt.append(np.nan)
+            dt.append(np.nan)
+
+    st, upt, dt = pd.Series(supertrend.iloc[:, 0]), pd.Series(upt), pd.Series(dt)
+    upt.index, dt.index = supertrend.index, supertrend.index
+    return st, upt, dt
+
+
+def calculate_super_trend_signals(prices_df):
+    """
+    Advanced super trend following strategy using multiple timeframes and indicators
+    """
+    st, upt, dt = get_supertrend(prices_df['high'], prices_df['low'], prices_df['close'], 11, 3)
+
+    # Calculate ADX for trend strength
+    adx = calculate_adx(prices_df, 14)
+
+    # Combine signals with confidence weighting
+    trend_strength = adx["adx"].iloc[-1] / 100.0
+
+    if prices_df['close'].iloc[-1] > st.iloc[-1]:
+        signal = "bullish"
+        confidence = trend_strength
+    else:
+        signal = "bearish"
+        confidence = trend_strength
+
+    return {
+        "signal": signal,
+        "confidence": confidence,
+        "metrics": {
+            "adx": float(adx["adx"].iloc[-1]),
+            "trend_strength": float(trend_strength),
+        },
     }
 
 
