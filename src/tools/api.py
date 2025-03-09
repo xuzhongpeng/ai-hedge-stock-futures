@@ -24,6 +24,7 @@ _cache = get_cache()
 
 def get_prices(ticker: str, assets: str, start_date: str, end_date: str) -> list[Price]:
     """Fetch price data from cache or API."""
+    start_date = start_date.replace("-", "")
     end_date = end_date.replace("-", "")
     # Check cache first
     if cached_data := _cache.get_prices(ticker):
@@ -38,7 +39,11 @@ def get_prices(ticker: str, assets: str, start_date: str, end_date: str) -> list
         df.rename(columns={"日期": "trade_date", "开盘": "open", "收盘": "close", "最高": "high", "最低": "low", "成交量": "vol", "成交额": "amount", "涨跌幅": "pct_chg", "涨跌额": "change", "换手率": "turn_over"}, inplace=True)
         df = df.sort_index(ascending=True)
     elif assets == "US":
-        pass
+        df = ak.stock_us_daily(symbol=ticker, adjust="qfq")
+        df = df[df['date'] <= pd.to_datetime(end_date)]
+        df = df[df['date'] >= pd.to_datetime(start_date)]
+        df.rename(columns={"date": "trade_date", "volume": "vol"}, inplace=True)
+        df = df.reset_index(drop=True)
     else:
         df = ak.futures_zh_minute_sina(symbol=ticker, period=15)
         df.rename(columns={"datetime": "trade_date", "volume": "vol", "成交额": "amount"}, inplace=True)
