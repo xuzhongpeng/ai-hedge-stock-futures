@@ -4,6 +4,7 @@ import json
 from typing import TypeVar, Type, Optional, Any
 from pydantic import BaseModel
 from utils.progress import progress
+from dashscope import Generation
 
 T = TypeVar('T', bound=BaseModel)
 

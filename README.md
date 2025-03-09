@@ -3,6 +3,10 @@ Thanks to the project [AI Hedge Fund](https://github.com/virattt/ai-hedge-fund).
 
 感谢开源项目[AI Hedge Fund](https://github.com/virattt/ai-hedge-fund)，但是原来的项目并不适合中国的投资者且数据源过于昂贵，重构该项目并保留原有项目基本信息，使用免费的[akshare](https://akshare.akfamily.xyz/tutorial.html)数据源，支持中国股票、中国期货、美国股票的AI agents分析
 
+Note: To use the Qwen series models, you need to manually install the [langchain-qwen](https://github.com/mapicccy/langchain_qwen) package, which is not officially provided.
+
+注意：使用通义千问系列模型需要手动安装[langchain_qwen](https://github.com/mapicccy/langchain_qwen)，该包非官方提供
+
 
 # AI Hedge Fund
 

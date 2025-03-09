@@ -25,6 +25,7 @@ questionary = "^2.1.0"
 rich = "^13.9.4"
 dotenv = "^0.9.9"
 akshare = "1.15.94"
+dashscope = "^1.22.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
