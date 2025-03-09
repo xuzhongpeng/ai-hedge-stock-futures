@@ -90,6 +90,11 @@ AVAILABLE_MODELS = [
         model_name="qwen-max-latest",
         provider=ModelProvider.QWEN
     ),
+    LLMModel(
+        display_name="[qwen] qwq-plus",
+        model_name="qwq-plus",
+        provider=ModelProvider.QWEN
+    ),
 ]
 
 # Create LLM_ORDER in the format expected by the UI
