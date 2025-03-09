@@ -46,6 +46,16 @@ AVAILABLE_MODELS = [
         provider=ModelProvider.QWEN
     ),
     LLMModel(
+        display_name="[qwen] deepseek-r1",
+        model_name="deepseek-r1",
+        provider=ModelProvider.QWEN
+    ),
+    LLMModel(
+        display_name="[qwen] deepseek-v3",
+        model_name="deepseek-v3",
+        provider=ModelProvider.QWEN
+    ),
+    LLMModel(
         display_name="[deepseek] deepseek-chat",
         model_name="deepseek-chat",
         provider=ModelProvider.DEEPSEEK
