@@ -155,7 +155,7 @@ def generate_trading_decision(
               Current Positions: {portfolio_positions}
               Current Margin Requirement: {margin_requirement}
 
-              Output strictly in JSON with the following structure:
+              Output strictly in JSON with the following structure(confidence is in range of 0. and 100.):
               {{
                 "decisions": {{
                   "TICKER1": {{

@@ -70,17 +70,16 @@ def technical_analyst_agent(state: AgentState):
         # Combine all signals using a weighted ensemble approach
         strategy_weights = {
             "super_trend": 0.3,
-            "trend": 0.2,
-            "mean_reversion": 0.1,
+            "mean_reversion": 0.15,
             "momentum": 0.2,
-            "volatility": 0.1,
-            "stat_arb": 0.1,
+            "volatility": 0.2,
+            "stat_arb": 0.15,
         }
 
         progress.update_status("technical_analyst_agent", ticker, "Combining signals")
         combined_signal = weighted_signal_combination(
             {
-                "trend": trend_signals,
+                "super_trend": super_trend_signals,
                 "mean_reversion": mean_reversion_signals,
                 "momentum": momentum_signals,
                 "volatility": volatility_signals,
@@ -94,10 +93,10 @@ def technical_analyst_agent(state: AgentState):
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
             "strategy_signals": {
-                "trend_following": {
-                    "signal": trend_signals["signal"],
-                    "confidence": round(trend_signals["confidence"] * 100),
-                    "metrics": normalize_pandas(trend_signals["metrics"]),
+                "super_trend_following": {
+                    "signal": super_trend_signals["signal"],
+                    "confidence": round(super_trend_signals["confidence"] * 100),
+                    "metrics": normalize_pandas(super_trend_signals["metrics"]),
                 },
                 "mean_reversion": {
                     "signal": mean_reversion_signals["signal"],

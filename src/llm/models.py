@@ -36,6 +36,21 @@ class LLMModel(BaseModel):
 # Define available models
 AVAILABLE_MODELS = [
     LLMModel(
+        display_name="[qwen] qwen-max-latest",
+        model_name="qwen-max-latest",
+        provider=ModelProvider.QWEN
+    ),
+    LLMModel(
+        display_name="[qwen] qwq-plus",
+        model_name="qwq-plus",
+        provider=ModelProvider.QWEN
+    ),
+    LLMModel(
+        display_name="[deepseek] deepseek-chat",
+        model_name="deepseek-chat",
+        provider=ModelProvider.DEEPSEEK
+    ),
+    LLMModel(
         display_name="[anthropic] claude-3.5-haiku",
         model_name="claude-3-5-haiku-latest",
         provider=ModelProvider.ANTHROPIC
@@ -79,21 +94,6 @@ AVAILABLE_MODELS = [
         display_name="[openai] o3-mini",
         model_name="o3-mini",
         provider=ModelProvider.OPENAI
-    ),
-    LLMModel(
-        display_name="[deepseek] deepseek-chat",
-        model_name="deepseek-chat",
-        provider=ModelProvider.DEEPSEEK
-    ),
-    LLMModel(
-        display_name="[qwen] qwen-max-latest",
-        model_name="qwen-max-latest",
-        provider=ModelProvider.QWEN
-    ),
-    LLMModel(
-        display_name="[qwen] qwq-plus",
-        model_name="qwq-plus",
-        provider=ModelProvider.QWEN
     ),
 ]
 
