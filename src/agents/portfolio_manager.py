@@ -103,7 +103,9 @@ def generate_trading_decision(
         [
             (
               "system",
-              """You are a portfolio manager making final trading decisions based on multiple tickers.
+              """You are a portfolio manager making finally reasonable trading decisions based on multiple tickers and their confidence levels and ensure compliance with all specified requirements.
+
+              Confidence is in range of 0% and 100%.
 
               Trading Rules:
               - For long positions:
@@ -155,7 +157,7 @@ def generate_trading_decision(
               Current Positions: {portfolio_positions}
               Current Margin Requirement: {margin_requirement}
 
-              Output strictly in JSON with the following structure(confidence is in range of 0. and 100.):
+              Output strictly in JSON with the following structure:
               {{
                 "decisions": {{
                   "TICKER1": {{

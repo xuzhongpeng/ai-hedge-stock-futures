@@ -1,4 +1,5 @@
 import sys
+import time
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -26,7 +27,7 @@ from typing_extensions import Callable
 init(autoreset=True)
 
 
-class Backtester:
+class Monitor:
     def __init__(
         self,
         agent: Callable,
@@ -281,19 +282,20 @@ class Backtester:
         end_date_dt = datetime.strptime(self.end_date, "%Y-%m-%d")
         start_date_dt = end_date_dt - relativedelta(years=1)
         start_date_str = start_date_dt.strftime("%Y-%m-%d")
+        day = (datetime.now() + timedelta(days=0)).strftime('%Y%m%d')
 
         for ticker in self.tickers:
             # Fetch price data for the entire period, plus 1 year
-            get_prices(ticker, self.assets, start_date_str, self.end_date)
+            get_prices(ticker, self.assets, start_date_str, day)
 
             # Fetch financial metrics
-            get_financial_metrics(ticker, self.end_date, limit=10)
+            get_financial_metrics(ticker, day, limit=10)
 
             # Fetch insider trades
-            get_insider_trades(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            get_insider_trades(ticker, day, start_date=self.start_date, limit=1000)
 
             # Fetch company news
-            get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            get_company_news(ticker, day, start_date=self.start_date, limit=1000)
 
         print("Data pre-fetch complete.")
 
@@ -308,12 +310,7 @@ class Backtester:
             print(f"Error parsing action: {agent_output}")
             return {"action": "hold", "quantity": 0}
 
-    def run_backtest(self):
-        # Pre-fetch all data at the start
-        self.prefetch_data()
-
-        df = get_price_data(self.tickers[0], self.assets, self.start_date, self.end_date)
-        dates = df.index.tolist()
+    def run_monitor(self):
         table_rows = []
         performance_metrics = {
             'sharpe_ratio': None,
@@ -324,20 +321,13 @@ class Backtester:
             'net_exposure': None
         }
 
-        print("\nStarting backtest...")
+        print("\nStarting monitor {}...".format(self.tickers))
 
         # Initialize portfolio values list with initial capital
-        if len(dates) > 0:
-            self.portfolio_values = [{"Date": dates[0], "Portfolio Value": self.initial_capital}]
-        else:
-            self.portfolio_values = []
+        self.portfolio_values = []
 
-        skip_dates = 0
-        for current_date in dates:
-            skip_dates += 1
-            if skip_dates < 30:
-                continue
-
+        while True:
+            current_date = (datetime.now() + timedelta(days=0))
             if self.assets == "A" or self.assets == "US":
                 lookback_start = (current_date - timedelta(days=30)).strftime("%Y%m%d")
                 current_date_str = current_date.strftime("%Y%m%d")
@@ -505,6 +495,8 @@ class Backtester:
             if len(self.portfolio_values) > 3:
                 self._update_performance_metrics(performance_metrics)
 
+            time.sleep(180)
+
         return performance_metrics
 
     def _update_performance_metrics(self, performance_metrics):
@@ -650,7 +642,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--start-date",
         type=str,
-        default=(datetime.now() - relativedelta(months=6)).strftime("%Y-%m-%d"),
+        default=(datetime.now() - relativedelta(months=1)).strftime("%Y-%m-%d"),
         help="Start date in YYYY-MM-DD format",
     )
     parser.add_argument(
@@ -723,8 +715,8 @@ if __name__ == "__main__":
             model_provider = "Unknown"
             print(f"\nSelected model: {Fore.GREEN + Style.BRIGHT}{model_choice}{Style.RESET_ALL}\n")
 
-    # Create and run the backtester
-    backtester = Backtester(
+    # Create and run the monitor
+    monitor = Monitor(
         agent=run_hedge_fund,
         tickers=tickers,
         assets=assets,
@@ -737,5 +729,5 @@ if __name__ == "__main__":
         initial_margin_requirement=args.margin_requirement,
     )
 
-    performance_metrics = backtester.run_backtest()
-    performance_df = backtester.analyze_performance()
+    performance_metrics = monitor.run_monitor()
+    performance_df = monitor.analyze_performance()

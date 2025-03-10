@@ -93,7 +93,7 @@ def technical_analyst_agent(state: AgentState):
             "signal": combined_signal["signal"],
             "confidence": round(combined_signal["confidence"] * 100),
             "strategy_signals": {
-                "super_trend_following": {
+                "super_trend": {
                     "signal": super_trend_signals["signal"],
                     "confidence": round(super_trend_signals["confidence"] * 100),
                     "metrics": normalize_pandas(super_trend_signals["metrics"]),
