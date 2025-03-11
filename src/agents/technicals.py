@@ -27,6 +27,7 @@ def technical_analyst_agent(state: AgentState):
     start_date = data["start_date"]
     end_date = data["end_date"]
     tickers = data["tickers"]
+    realtime = state["metadata"]["realtime"]
 
     # Initialize analysis for each ticker
     technical_analysis = {}
@@ -40,6 +41,7 @@ def technical_analyst_agent(state: AgentState):
             assets=assets,
             start_date=start_date,
             end_date=end_date,
+            realtime=realtime,
         )
 
         if not prices:

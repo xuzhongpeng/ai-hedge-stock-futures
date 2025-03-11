@@ -337,6 +337,18 @@ class Monitor:
                 current_date_str = current_date.strftime("%Y%m%d%H%M%S")
                 previous_date_str = (current_date - timedelta(days=1)).strftime("%Y%m%d%H%M%S")
 
+            try:
+                df = get_price_data(self.tickers[0], self.assets, previous_date_str, current_date_str, True)
+            except Exception:
+                # If data is missing or there's an API error, skip this day
+                print(f"Error fetching prices between {previous_date_str} and {current_date_str}")
+                continue
+
+            # Skip if there's no newest information
+            if current_date > timedelta(minutes=305) + pd.to_datetime(df.iloc[-1]['time']):
+                time.sleep(3600)
+                continue
+
             # Skip if there's no prior day to look back (i.e., first date in the range)
             if lookback_start == current_date_str:
                 continue
@@ -344,7 +356,7 @@ class Monitor:
             # Get current prices for all tickers
             try:
                 current_prices = {
-                    ticker: get_price_data(ticker, self.assets, previous_date_str, current_date_str).iloc[-1]["close"]
+                    ticker: get_price_data(ticker, self.assets, previous_date_str, current_date_str, True).iloc[-1]["close"]
                     for ticker in self.tickers
                 }
             except Exception:
@@ -363,6 +375,7 @@ class Monitor:
                 portfolio=self.portfolio,
                 model_name=self.model_name,
                 model_provider=self.model_provider,
+                realtime=True,
                 selected_analysts=self.selected_analysts,
             )
             decisions = output["decisions"]
@@ -495,7 +508,7 @@ class Monitor:
             if len(self.portfolio_values) > 3:
                 self._update_performance_metrics(performance_metrics)
 
-            time.sleep(180)
+            time.sleep(100)
 
         return performance_metrics
 

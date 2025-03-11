@@ -22,16 +22,17 @@ from data.models import (
 _cache = get_cache()
 
 
-def get_prices(ticker: str, assets: str, start_date: str, end_date: str) -> list[Price]:
+def get_prices(ticker: str, assets: str, start_date: str, end_date: str, realtime: bool=False) -> list[Price]:
     """Fetch price data from cache or API."""
     start_date = start_date.replace("-", "")
     end_date = end_date.replace("-", "")
     # Check cache first
-    if cached_data := _cache.get_prices(ticker):
-        # Filter cached data by date range and convert to Price objects
-        filtered_data = [Price(**price) for price in cached_data if start_date <= price["time"] <= end_date]
-        if filtered_data:
-            return filtered_data
+    if not realtime:
+        if cached_data := _cache.get_prices(ticker):
+            # Filter cached data by date range and convert to Price objects
+            filtered_data = [Price(**price) for price in cached_data if start_date <= price["time"] <= end_date]
+            if filtered_data:
+                return filtered_data
 
     # If not in cache or no data in range, fetch from API
     if assets == "A":
@@ -65,8 +66,9 @@ def get_prices(ticker: str, assets: str, start_date: str, end_date: str) -> list
         )
         for _, row in df.iterrows()
     ]
-    # Cache the results as dicts
-    _cache.set_prices(ticker, [p.model_dump() for p in prices])
+    if not realtime:
+        # Cache the results as dicts
+        _cache.set_prices(ticker, [p.model_dump() for p in prices])
     return prices
 
 
@@ -302,6 +304,6 @@ def prices_to_df(prices: list[Price]) -> pd.DataFrame:
 
 
 # Update the get_price_data function to use the new functions
-def get_price_data(ticker: str, assets: str, start_date: str, end_date: str) -> pd.DataFrame:
-    prices = get_prices(ticker, assets, start_date, end_date)
+def get_price_data(ticker: str, assets: str, start_date: str, end_date: str, realtime: bool = False) -> pd.DataFrame:
+    prices = get_prices(ticker, assets, start_date, end_date, realtime)
     return prices_to_df(prices)
