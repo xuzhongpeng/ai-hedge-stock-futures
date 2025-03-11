@@ -72,9 +72,9 @@ def technical_analyst_agent(state: AgentState):
         # Combine all signals using a weighted ensemble approach
         strategy_weights = {
             "super_trend": 0.3,
-            "mean_reversion": 0.15,
+            "mean_reversion": 0.2,
             "momentum": 0.2,
-            "volatility": 0.2,
+            "volatility": 0.15,
             "stat_arb": 0.15,
         }
 
@@ -336,7 +336,7 @@ def calculate_momentum_signals(prices_df):
     # Price momentum
     returns = prices_df["close"].pct_change()
     mom_1m = returns.rolling(21).sum()
-    mom_3m = returns.rolling(63).sum()
+    mom_3m = returns.rolling(55).sum()
     mom_6m = returns.rolling(126).sum()
 
     # Volume momentum
@@ -354,10 +354,10 @@ def calculate_momentum_signals(prices_df):
 
     if momentum_score > 0.05 and volume_confirmation:
         signal = "bullish"
-        confidence = min(abs(momentum_score) * 5, 1.0)
+        confidence = 1 / (1 + np.exp(-abs(momentum_score) * 10))
     elif momentum_score < -0.05 and volume_confirmation:
         signal = "bearish"
-        confidence = min(abs(momentum_score) * 5, 1.0)
+        confidence = 1 / (1 + np.exp(-abs(momentum_score) * 10))
     else:
         signal = "neutral"
         confidence = 0.5
@@ -421,6 +421,19 @@ def calculate_volatility_signals(prices_df):
     }
 
 
+def calculate_hurst_exponent(price_series, max_lag=20):
+    """修正后的Hurst指数计算（强制约束0-1）"""
+    lags = range(2, max_lag)
+    tau = []
+    for lag in lags:
+        price_detrended = price_series - np.polyval(np.polyfit(np.arange(len(price_series)), price_series, 1),
+                                                    np.arange(len(price_series)))
+        tau.append(np.sqrt(np.std(price_detrended[lag:] - price_detrended[:-lag])))
+    poly = np.polyfit(np.log(lags), np.log(tau), 1)
+    hurst = poly[0] * 2
+    return max(0.0, min(1.0, hurst))  # 约束在0-1之间
+
+
 def calculate_stat_arb_signals(prices_df):
     """
     Statistical arbitrage signals based on price action analysis
@@ -433,7 +446,24 @@ def calculate_stat_arb_signals(prices_df):
     kurt = returns.rolling(63).kurt()
 
     # Test for mean reversion using Hurst exponent
-    hurst = calculate_hurst_exponent(prices_df["close"])
+    # hurst = calculate_hurst_exponent(prices_df["close"])
+
+    # 滚动计算Hurst指数（示例窗口63天）
+    hurst = prices_df["close"].rolling(63).apply(
+        lambda x: calculate_hurst_exponent(x), raw=True
+    )
+    hurst = hurst.iloc[-1]  # 取最新值
+
+    # 基于Hurst指数的置信度（0到1）
+    hurst_confidence = max(0.0, min(1.0, (0.5 - hurst) * 2))
+
+    # 偏度调整（绝对值越大，置信度越高）
+    skew_factor = 1 - 1 / (1 + np.exp(abs(skew.iloc[-1]) - 1))  # Sigmoid函数
+
+    # 峰度调整（接近正态分布时置信度更高）
+    kurt_penalty = 1 / (1 + np.exp(kurt.iloc[-1] - 3))  # 对比正态分布峰度3
+
+    confidence = np.clip(hurst_confidence * skew_factor * kurt_penalty, 0, 1)
 
     # Correlation analysis
     # (would include correlation with related securities in real implementation)

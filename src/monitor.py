@@ -1,5 +1,6 @@
 import sys
 import time
+import akshare as ak
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -327,6 +328,8 @@ class Monitor:
         self.portfolio_values = []
 
         while True:
+            df = ak.tool_trade_date_hist_sina()
+            trading_dates = sorted([str(date) for date in df['trade_date'].tolist()])
             current_date = (datetime.now() + timedelta(days=0))
             if self.assets == "A" or self.assets == "US":
                 lookback_start = (current_date - timedelta(days=30)).strftime("%Y%m%d")
@@ -337,17 +340,8 @@ class Monitor:
                 current_date_str = current_date.strftime("%Y%m%d%H%M%S")
                 previous_date_str = (current_date - timedelta(days=1)).strftime("%Y%m%d%H%M%S")
 
-            try:
-                df = get_price_data(self.tickers[0], self.assets, previous_date_str, current_date_str, True)
-            except Exception:
-                # If data is missing or there's an API error, skip this day
-                print(f"Error fetching prices between {previous_date_str} and {current_date_str}")
-                continue
-
-            # Skip if there's no newest information
-            if current_date > timedelta(minutes=305) + pd.to_datetime(df.iloc[-1]['time']):
-                time.sleep(3600)
-                continue
+            if current_date_str[:8] in trading_dates:
+                time.sleep(12*60*60)
 
             # Skip if there's no prior day to look back (i.e., first date in the range)
             if lookback_start == current_date_str:
