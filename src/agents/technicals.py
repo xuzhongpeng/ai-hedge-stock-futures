@@ -142,6 +142,81 @@ def technical_analyst_agent(state: AgentState):
     }
 
 
+def has_long_monotonic_decreasing_segment(lst, cnt):
+    if len(lst) < 300:
+        return 0
+
+    lst = list(lst)
+    l = len(lst)
+
+    # 初始化变量
+    idx = 0
+    in_descending_segment = False
+    count = 1  # 初始设置为1而非0，因单个元素也可视作“区间”
+    max_count = 0  # 用于记录最长下降区间的元素数量
+
+    for i in range(l - 299, l):
+        if l - idx > 24:
+            idx = 0
+
+        # 标记下降区间
+        if lst[i-1] > lst[i]:
+            count += 1
+            in_descending_segment = True
+            idx = i
+        else:  # 当前元素不小于前面的元素，即不满足单调下降
+            if in_descending_segment and count > max_count:
+                # 更新最长下降区间计数
+                max_count = count
+                idx = i
+
+                if max_count >= cnt and l - idx <= 10:
+                    # print(f"total seg={l}, idx={idx}, max decreasing seg={max_count}")
+                    return max_count
+
+            in_descending_segment = False
+            count = 1   # 重新开始统计新段落的长度
+
+    return count
+
+def has_long_monotonic_increasing_segment(lst, cnt):
+    if len(lst) < 300:
+        return 0
+
+    lst = list(lst)
+    l = len(lst)
+
+    # 初始化变量
+    idx = 0
+    in_inscending_segment = False
+    count = 1  # 初始设置为1而非0，因单个元素也可视作“区间”
+    max_count = 0  # 用于记录最长下降区间的元素数量
+
+    for i in range(l - 299, l):
+        if l - idx > 24:
+            idx = 0
+
+        # 标记上升区间
+        if lst[i-1] < lst[i]:
+            count += 1
+            in_inscending_segment = True
+            idx = i
+        else:  # 当前元素不小于前面的元素，即不满足单调下降
+            if in_inscending_segment and count > max_count:
+                # 更新最长下降区间计数
+                max_count = count
+                idx = i
+
+                if max_count >= cnt and l - idx <= 10:
+                    # print(f"total seg={l}, idx={idx}, max decreasing seg={max_count}")
+                    return max_count
+
+            in_inscending_segment = False
+            count = 1   # 重新开始统计新段落的长度
+
+    return count
+
+
 def get_supertrend(high, low, close, lookback, multiplier):
     # ATR
     tr1 = pd.DataFrame(high - low)
@@ -219,11 +294,53 @@ def get_supertrend(high, low, close, lookback, multiplier):
     return st, upt, dt
 
 
+# 计算滚动窗口内的斜率
+def calculate_slope(x):
+    # 将 NaN 转换为 np.nan
+    x = np.array(x, dtype=np.float64)
+    # 检查窗口中的 NaN 值数量
+    if np.isnan(x).sum() > 0:
+        return np.nan
+    # 计算拟合直线的斜率
+    slope = np.polyfit(range(len(x)), x, 1)[0]
+    return slope
+
+
 def calculate_super_trend_signals(prices_df):
     """
     Advanced super trend following strategy using multiple timeframes and indicators
     """
     st, upt, dt = get_supertrend(prices_df['high'], prices_df['low'], prices_df['close'], 11, 3)
+
+    prices_df['MA34'] = prices_df['close'].rolling(window=34).mean()
+    prices_df['MA55'] = prices_df['close'].rolling(window=55).mean()
+    prices_df['MA127'] = prices_df['close'].rolling(window=127).mean()
+    prices_df['slope_of_MA34'] = prices_df['MA34'].rolling(window=3).apply(calculate_slope, raw=True).round(3)
+    prices_df['slope_of_MA55'] = prices_df['MA55'].rolling(window=3).apply(calculate_slope, raw=True).round(3)
+    prices_df['slope_of_MA127'] = prices_df['MA127'].rolling(window=3).apply(calculate_slope, raw=True).round(3)
+
+    total_length = len(prices_df)
+    golden_candidate = 0
+    bull = False
+    if total_length > 60:
+        for i in range(len(prices_df)):
+            if i < 300:
+                continue
+
+            if has_long_monotonic_decreasing_segment(prices_df['MA34'].iloc[:i], 120) > 120 or has_long_monotonic_decreasing_segment(prices_df['MA55'].iloc[:i], 120) > 120:
+                golden_candidate = 200
+
+            if golden_candidate:
+                golden_candidate -= 1
+
+    if (prices_df['slope_of_MA55'].iloc[-1] > prices_df['slope_of_MA55'].iloc[-2] > prices_df['slope_of_MA55'].iloc[-3] > prices_df['slope_of_MA55'].iloc[-4] or \
+        prices_df['slope_of_MA34'].iloc[-1] > prices_df['slope_of_MA34'].iloc[-2] > prices_df['slope_of_MA34'].iloc[-3] > prices_df['slope_of_MA34'].iloc[-4] or \
+        prices_df.tail(5)['slope_of_MA34'].min() > -0.4) and \
+        prices_df.tail(15)['slope_of_MA34'].abs().mean() > 0.25 and \
+        prices_df.iloc[-15:].apply(lambda row: row['close'] > row['MA34'], axis=1).sum() >= 5 and \
+        prices_df.iloc[-15:].apply(lambda row: row['close'] < row['MA55'], axis=1).sum() > 10 and \
+        golden_candidate:
+            bull = True
 
     # Calculate ADX for trend strength
     adx = calculate_adx(prices_df, 14)
@@ -235,7 +352,7 @@ def calculate_super_trend_signals(prices_df):
         signal = "bullish"
         confidence = trend_strength
     else:
-        signal = "bearish"
+        signal = "bearish" if not bull else "bullish"
         confidence = trend_strength
 
     return {
@@ -244,6 +361,7 @@ def calculate_super_trend_signals(prices_df):
         "metrics": {
             "adx": float(adx["adx"].iloc[-1]),
             "trend_strength": float(trend_strength),
+            "bull": bull
         },
     }
 

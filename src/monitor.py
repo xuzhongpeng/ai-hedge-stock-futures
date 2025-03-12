@@ -433,6 +433,10 @@ class Monitor:
                 bullish_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "bullish"])
                 bearish_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "bearish"])
                 neutral_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "neutral"])
+                bool_reversal = len([s for s in ticker_signals.values() if s.get("strategy_signals", {}).get("super_trend", {}).get("metrics", {}).get("bull", False) == True])
+                reversal = ""
+                if bool_reversal > 0:
+                    reversal = "Bull"
 
                 # Calculate net position value
                 pos = self.portfolio["positions"][ticker]
@@ -457,6 +461,7 @@ class Monitor:
                         bullish_count=bullish_count,
                         bearish_count=bearish_count,
                         neutral_count=neutral_count,
+                        reversal=reversal,
                     )
                 )
             # ---------------------------------------------------------------

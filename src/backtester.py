@@ -335,7 +335,10 @@ class Backtester:
         skip_dates = 0
         for current_date in dates:
             skip_dates += 1
-            if skip_dates < 30:
+            if skip_dates < 50:
+                continue
+
+            if current_date < datetime.strptime("20250101150000", "%Y%m%d%H%M%S"):
                 continue
 
             if self.assets == "A" or self.assets == "US":
@@ -436,6 +439,10 @@ class Backtester:
                 bullish_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "bullish"])
                 bearish_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "bearish"])
                 neutral_count = len([s for s in ticker_signals.values() if s.get("signal", "").lower() == "neutral"])
+                bool_reversal = len([s for s in ticker_signals.values() if s.get("strategy_signals", {}).get("super_trend", {}).get("metrics", {}).get("bull", False) == True])
+                reversal = ""
+                if bool_reversal > 0:
+                    reversal = "Bull"
 
                 # Calculate net position value
                 pos = self.portfolio["positions"][ticker]
@@ -460,6 +467,7 @@ class Backtester:
                         bullish_count=bullish_count,
                         bearish_count=bearish_count,
                         neutral_count=neutral_count,
+                        reversal=reversal,
                     )
                 )
             # ---------------------------------------------------------------
