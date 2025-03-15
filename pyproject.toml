@@ -24,7 +24,7 @@ colorama = "^0.4.6"
 questionary = "^2.1.0"
 rich = "^13.9.4"
 dotenv = "^0.9.9"
-akshare = "1.15.94"
+akshare = "1.16.45"
 dashscope = "^1.22.2"
 
 [tool.poetry.group.dev.dependencies]

@@ -284,6 +284,8 @@ def get_market_cap(
 ) -> float | None:
     """Fetch market cap from the API."""
     financial_metrics = get_financial_metrics(ticker, end_date)
+    if not financial_metrics:
+        return None
     market_cap = financial_metrics[0].market_cap
     if not market_cap:
         return None
