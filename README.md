@@ -5,7 +5,9 @@ Thanks to the project [AI Hedge Fund](https://github.com/virattt/ai-hedge-fund).
 
 Note: To use the Qwen series models, you need to manually install the [langchain-qwen](https://github.com/mapicccy/langchain_qwen) package, which is not officially provided.
 
-注意：使用通义千问系列模型需要手动安装[langchain_qwen](https://github.com/mapicccy/langchain_qwen)，该包非官方提供
+注意：
+1. 使用通义千问系列模型需要手动安装[langchain_qwen](https://github.com/mapicccy/langchain_qwen)，放置在langchain的同级目录即可，该包非官方提供
+2. akshre数据源有很大的局限性，目前仅适配了Technical Analyst，做技术分析的agent，程序启动时需要手动选择
 
 
 # AI Hedge Fund
