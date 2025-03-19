@@ -85,7 +85,6 @@ def stanley_druckenmiller_agent(state: AgentState):
         company_news = get_company_news(ticker, assets, end_date, start_date=None, limit=50)
 
         progress.update_status("stanley_druckenmiller_agent", ticker, "Fetching recent price data for momentum")
-        # Fetch ~1 year of daily prices for momentum/trend analysis
         prices = get_prices(ticker, assets=assets, start_date=start_date, end_date=end_date)
 
         progress.update_status("stanley_druckenmiller_agent", ticker, "Analyzing growth & momentum")
