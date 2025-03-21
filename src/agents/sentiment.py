@@ -5,7 +5,20 @@ import pandas as pd
 import numpy as np
 import json
 
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
 from tools.api import get_insider_trades, get_company_news
+from pydantic import BaseModel, Field
+from typing_extensions import Literal
+from utils.llm import call_llm
+
+
+class SentimentDecision(BaseModel):
+    sentiment: Literal["neutral", "positive", "negative"]
+
+
+class SentimentOutput(BaseModel):
+    decisions: dict[str, SentimentDecision] = Field(description="Dictionary of ticker news' sentiment")
 
 
 ##### Sentiment Agent #####
@@ -14,6 +27,10 @@ def sentiment_agent(state: AgentState):
     data = state.get("data", {})
     end_date = data.get("end_date")
     tickers = data.get("tickers")
+    assets = data.get("assets", "A")
+    meta = state.get("metadata", {})
+    model_name = meta.get("model_name", "qwen-max-latest")
+    model_provider = meta.get("model_provider", "QWen")
 
     # Initialize sentiment analysis for each ticker
     sentiment_analysis = {}
@@ -37,18 +54,62 @@ def sentiment_agent(state: AgentState):
         progress.update_status("sentiment_agent", ticker, "Fetching company news")
 
         # Get the company news
-        company_news = get_company_news(ticker, end_date, limit=100)
+        company_news = get_company_news(ticker, assets, end_date, limit=100)
 
-        # Get the sentiment from the company news
-        sentiment = pd.Series([n.sentiment for n in company_news]).dropna()
-        news_signals = np.where(sentiment == "negative", "bearish", 
+        # Create the prompt template
+        template = ChatPromptTemplate.from_messages(
+           [
+            (
+              "system",
+              """You are a stock and futures analyst who can analyze news about a specified stock or futures
+              and determine the sentiment as neutral, positive, or negative.
+              """,
+            ),
+            (
+              "human",
+              """Based on the news, make your decisions.
+
+              Here are the news about ticker:
+              {ticker_news}
+
+              Output strictly in JSON with the following structure:
+              {{
+                "decisions": {{
+                    "news1": {{
+                        "sentiment": "neutral/positive/negative"
+                    }},
+                    "news2": {{
+                        ...
+                    }}
+                }}
+              }}
+              """,
+            ),
+            ]
+        )
+
+        # Generate the prompt
+        prompt = template.invoke(
+            {
+                "ticker_news": company_news,
+            }
+        )
+
+        # Create default factory for SentimentOutput
+        def create_default_sentiment_output():
+            return SentimentOutput(decisions={news: SentimentDecision(sentiment="neutral") for news in company_news})
+
+        ret = call_llm(prompt=prompt, model_name=model_name, model_provider=model_provider, pydantic_model=SentimentOutput, agent_name="sentiment_agent", default_factory=create_default_sentiment_output)
+        sentiment = pd.Series([n.sentiment for n in ret.decisions.values()]).dropna()
+
+        news_signals = np.where(sentiment == "negative", "bearish",
                               np.where(sentiment == "positive", "bullish", "neutral")).tolist()
-        
+
         progress.update_status("sentiment_agent", ticker, "Combining signals")
         # Combine signals from both sources with weights
         insider_weight = 0.3
         news_weight = 0.7
-        
+
         # Calculate weighted signal counts
         bullish_signals = (
             insider_signals.count("bullish") * insider_weight +

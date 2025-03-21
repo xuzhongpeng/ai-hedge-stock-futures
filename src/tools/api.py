@@ -216,11 +216,11 @@ def get_insider_trades(
 
 def get_company_news(
     ticker: str,
+    assets: str,
     end_date: str,
     start_date: str | None = None,
     limit: int = 1000,
 ) -> list[CompanyNews]:
-    return []
     """Fetch company news from cache or API."""
     # Check cache first
     if cached_data := _cache.get_company_news(ticker):
@@ -233,45 +233,30 @@ def get_company_news(
             return filtered_data
 
     # If not in cache or insufficient data, fetch from API
-    headers = {}
-    if api_key := os.environ.get("FINANCIAL_DATASETS_API_KEY"):
-        headers["X-API-KEY"] = api_key
-
-    all_news = []
-    current_end_date = end_date
-    
-    while True:
-        url = f"https://api.financialdatasets.ai/news/?ticker={ticker}&end_date={current_end_date}"
-        if start_date:
-            url += f"&start_date={start_date}"
-        url += f"&limit={limit}"
-        
-        response = requests.get(url, headers=headers)
-        if response.status_code != 200:
-            raise Exception(f"Error fetching data: {ticker} - {response.status_code} - {response.text}")
-        
-        data = response.json()
-        response_model = CompanyNewsResponse(**data)
-        company_news = response_model.news
-        
-        if not company_news:
-            break
-            
-        all_news.extend(company_news)
-        
-        # Only continue pagination if we have a start_date and got a full page
-        if not start_date or len(company_news) < limit:
-            break
-            
-        # Update end_date to the oldest date from current batch for next iteration
-        current_end_date = min(news.date for news in company_news).split('T')[0]
-        
-        # If we've reached or passed the start_date, we can stop
-        if current_end_date <= start_date:
-            break
-
-    if not all_news:
+    if assets == "A":
+        df = ak.stock_news_em(symbol=ticker)
+        df.rename(columns={"关键词": "ticker", "新闻标题": "title", "文章来源": "author", "新闻内容": "source", "发布时间": "date", "新闻链接": "url"}, inplace=True)
+        df = df.loc[df['date'] <= end_date + " 23:59:59"]
+        print(df)
+    elif assets == "US":
         return []
+    else:
+        return []
+
+    if df.empty:
+        raise Exception(f"Error fetching data: {ticker} - {end_date}")
+
+    all_news = [
+        CompanyNews(
+            ticker=row['ticker'],
+            date=pd.to_datetime(row['date']).strftime("%Y%m%d%H%M%S"),
+            title=row['title'],
+            author=row['author'],
+            source=row['source'],
+            url=row['url'],
+        )
+        for _, row in df.iterrows()
+    ]
 
     # Cache the results
     _cache.set_company_news(ticker, [news.model_dump() for news in all_news])

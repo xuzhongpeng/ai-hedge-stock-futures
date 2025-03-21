@@ -296,7 +296,7 @@ class Monitor:
             get_insider_trades(ticker, day, start_date=self.start_date, limit=1000)
 
             # Fetch company news
-            get_company_news(ticker, day, start_date=self.start_date, limit=1000)
+            get_company_news(ticker, self.assets, day, start_date=self.start_date, limit=1000)
 
         print("Data pre-fetch complete.")
 

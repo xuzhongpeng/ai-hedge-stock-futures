@@ -22,6 +22,7 @@ def charlie_munger_agent(state: AgentState):
     data = state["data"]
     end_date = data["end_date"]
     tickers = data["tickers"]
+    assets = data.get("assets", "A")
     
     analysis_data = {}
     munger_analysis = {}
@@ -71,6 +72,7 @@ def charlie_munger_agent(state: AgentState):
         # Munger avoids businesses with frequent negative press
         company_news = get_company_news(
             ticker,
+            assets,
             end_date,
             # Look back 1 year for news
             start_date=None,

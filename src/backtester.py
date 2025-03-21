@@ -293,7 +293,7 @@ class Backtester:
             get_insider_trades(ticker, self.end_date, start_date=self.start_date, limit=1000)
 
             # Fetch company news
-            get_company_news(ticker, self.end_date, start_date=self.start_date, limit=1000)
+            get_company_news(ticker, self.assets, self.end_date, start_date=self.start_date, limit=1000)
 
         print("Data pre-fetch complete.")
 
