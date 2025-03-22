@@ -256,6 +256,7 @@ def print_backtest_results(table_rows: list) -> None:
                 "Bullish",
                 "Bearish",
                 "Neutral",
+                "Confidence",
                 "Reversal",
             ],
             tablefmt="grid",
@@ -270,6 +271,7 @@ def print_backtest_results(table_rows: list) -> None:
                 "right",  # Bullish
                 "right",  # Bearish
                 "right",  # Neutral
+                "right",  # Confidence
                 "right",  # Reversal
             ),
         )
@@ -316,6 +318,7 @@ def format_backtest_row(
     bullish_count: int,
     bearish_count: int,
     neutral_count: int,
+    confidence: int = 0,
     reversal: str = None,
     is_summary: bool = False,
     total_value: float = None,
@@ -365,5 +368,6 @@ def format_backtest_row(
             f"{Fore.GREEN}{bullish_count}{Style.RESET_ALL}",
             f"{Fore.RED}{bearish_count}{Style.RESET_ALL}",
             f"{Fore.BLUE}{neutral_count}{Style.RESET_ALL}",
+            f"{Fore.WHITE}{confidence}{Style.RESET_ALL}",
             f"{Fore.GREEN}{reversal}{Style.RESET_ALL}",
         ]
