@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import json
 import threading
 import traceback
@@ -15,14 +16,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 sock = Sock(app)
 
 websocket_clients = []
-
-def broadcast_log(message, level="info"):
-    log_data = {"level": level, "message": message}
-    for client in websocket_clients[:]:
-        try:
-            client.send(json.dumps(log_data))
-        except Exception:
-            websocket_clients.remove(client)
 
 @app.route('/api/analysis', methods=['POST'])
 def run_analysis():
@@ -43,10 +36,7 @@ def run_analysis():
             "cost_basis": {},
             "realized_gains": {ticker: {"long": 0.0, "short": 0.0} for ticker in ticker_list}
         }
-        print(ticker_list)
-        print(assets)
 
-        broadcast_log(f"Starting analysis for {ticker_list}", "info")
         result = run_hedge_fund(
             tickers=ticker_list,
             assets=assets,
@@ -59,12 +49,20 @@ def run_analysis():
             model_provider="QWen"
         )
 
-        broadcast_log("Analysis completed successfully", "success")
-        return jsonify(result)
+        def convert_nan_to_null(obj):
+            if isinstance(obj, dict):
+                return {k: convert_nan_to_null(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_nan_to_null(v) for v in obj]
+            elif isinstance(obj, float) and math.isnan(obj):
+                return None
+            else:
+                return obj
 
+        result = convert_nan_to_null(result)
+        return json.dumps(result)
     except Exception as e:
-        error_message = f"API Error: {str(e)}"
-        broadcast_log(error_message, "error")
+        error_message = f"API Error in run_analysis: {str(e)}"
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @sock.route('/ws/logs')

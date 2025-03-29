@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import requests
 import json
+import logging
 
 app = Flask(__name__)
+app.logger.setLevel(logging.DEBUG)
 app.secret_key = "your_secret_key"  # 用于表单安全验证
 
 # API URL
@@ -22,6 +24,7 @@ ANALYSTS = [
     "sentiment_analyst",
     "valuation_analyst"
 ]
+
 
 def format_analysis_results(result, ticker):
     if not result or "analyst_signals" not in result:
@@ -115,9 +118,9 @@ def index():
             "modelName": "qwen-max-latest"
         }
 
-        print(payload)
         try:
             response = requests.post(API_URL, json=payload, timeout=10000)
+            app.logger.info(response.text)
             response.raise_for_status()
             result = response.json()
 
@@ -130,13 +133,13 @@ def index():
                                    ANALYSTS=ANALYSTS)
 
         except requests.exceptions.RequestException as e:
-            flash(f"API Error: {str(e)}", "error")
+            flash(f"API Error in index: {str(e)}", "error")
         except Exception as e:
-            flash(f"Unexpected Error: {str(e)}", "error")
+            flash(f"Unexpected Error in index: {str(e)}", "error")
 
         return redirect(url_for("index"))
 
     return render_template("index.html", ANALYSTS=ANALYSTS)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=7860)
+    app.run(host="0.0.0.0", port=7860, debug=True)
