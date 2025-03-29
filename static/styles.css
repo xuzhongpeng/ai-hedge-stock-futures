@@ -1,0 +1,73 @@
+body {  
+    font-family: Arial, sans-serif;  
+    max-width: 1200px;  
+    margin: 0 auto;  
+    padding: 20px;  
+}  
+
+.container {  
+    padding: 20px;  
+    background: #f5f5f5;  
+    border-radius: 8px;  
+}  
+
+.form-group {  
+    margin-bottom: 20px;  
+}  
+
+.checkbox {  
+    margin-left: 20px;  
+    margin-bottom: 5px;  
+}  
+
+.btn {  
+    background: #28a745;  
+    color: white;  
+    padding: 10px 20px;  
+    border: none;  
+    border-radius: 4px;  
+    cursor: pointer;  
+}  
+
+.btn:hover {  
+    background: #218838;  
+}  
+
+.results {  
+    margin-top: 30px;  
+}  
+
+.analyst-box {  
+    border: 1px solid #ddd;  
+    margin-bottom: 20px;  
+    padding: 15px;  
+    border-radius: 8px;  
+    background-color: #f9f9f9;  
+}  
+
+.bullish { border-left: 5px solid green; }  
+.bearish { border-left: 5px solid red; }  
+.neutral { border-left: 5px solid orange; }  
+
+.decision-box {  
+    background-color: #e8f5ff;  
+    border: 2px solid #4a86e8;  
+    border-radius: 8px;  
+    padding: 15px;  
+    margin: 20px 0;  
+}  
+
+.reasoning {  
+    background-color: white;  
+    padding: 10px;  
+    border-radius: 4px;  
+    margin-top: 10px;  
+}  
+
+.alert {  
+    color: red;  
+    margin-top: 20px;  
+    padding: 10px;  
+    background: #fff3f3;  
+    border-radius: 4px;  
+}  

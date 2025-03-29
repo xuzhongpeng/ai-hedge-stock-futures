@@ -1,0 +1,70 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>Stock Analysis Dashboard</title>  
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">  
+</head>  
+<body>  
+    <div class="container">  
+        <h1>Stock Analysis Dashboard</h1>  
+        <form method="POST" action="/">  
+            <div class="form-group">  
+                <label for="ticker">Stock Ticker (e.g., AAPL):</label>  
+                <input type="text" name="ticker" id="ticker" required>  
+            </div>
+
+            <div class="form-group">  
+                <label for="type">Stock Type (e.g., US share):</label>  
+		{% set filter_options = ["A share", "US share", "Others"] %}
+		{% set default_filter = "A share" %}
+		<select class="form-select" name="selected_filter" id="type">  
+			{% for option in filter_options %}  
+			<option value="{{ option }}"   
+				{% if option == default_filter %}selected{% endif %}>  
+			{{ option }}  
+			</option>  
+			{% endfor %}  
+		</select> 
+            </div>
+
+	    <div class="form-group">  
+                <label>Select Analysts:</label>
+		{% set default_analyst = "technical_analyst" %}
+                {% for analyst in ANALYSTS %}
+                <div class="checkbox">
+                    <input type="checkbox" name="selected_analysts"
+                           value="{{ analyst }}" id="{{ analyst }}"
+			   {% if analyst == default_analyst %}checked{% endif %}>
+                    <label for="{{ analyst }}">  
+                        {{ analyst.replace('_', ' ').title() }}  
+                    </label>  
+                </div>  
+                {% endfor %}  
+            </div>  
+            
+            <button type="submit" class="btn">Analyze Stock</button>  
+        </form>  
+        
+        <!-- 显示结果 -->  
+        {% if results %}  
+        <div class="results">  
+            {{ results|safe }}  
+        </div>  
+        {% endif %}  
+        
+        <!-- 显示错误信息 -->  
+        {% with messages = get_flashed_messages() %}  
+        {% if messages %}  
+        <div class="alert">  
+            <ul>  
+                {% for message in messages %}  
+                <li>{{ message }}</li>  
+                {% endfor %}  
+            </ul>  
+        </div>  
+        {% endif %}  
+        {% endwith %}  
+    </div>  
+</body>  
+</html>  
