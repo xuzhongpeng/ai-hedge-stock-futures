@@ -45,6 +45,7 @@ def peter_lynch_agent(state: AgentState):
     start_date = data["start_date"]
     end_date = data["end_date"]
     tickers = data["tickers"]
+    assets = data["assets"]
 
     analysis_data = {}
     lynch_analysis = {}
@@ -83,10 +84,10 @@ def peter_lynch_agent(state: AgentState):
         insider_trades = get_insider_trades(ticker, end_date, start_date=None, limit=50)
 
         progress.update_status("peter_lynch_agent", ticker, "Fetching company news")
-        company_news = get_company_news(ticker, end_date, start_date=None, limit=50)
+        company_news = get_company_news(ticker, assets, end_date, start_date=None, limit=50)
 
         progress.update_status("peter_lynch_agent", ticker, "Fetching recent price data for reference")
-        prices = get_prices(ticker, start_date=start_date, end_date=end_date)
+        prices = get_prices(ticker, assets, start_date=start_date, end_date=end_date)
 
         # Perform sub-analyses:
         progress.update_status("peter_lynch_agent", ticker, "Analyzing growth")
