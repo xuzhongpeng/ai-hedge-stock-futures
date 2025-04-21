@@ -1,119 +1,70 @@
 <!DOCTYPE html>  
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Stock Analysis Dashboard - Professional stock analysis tool">
-    <title>Stock Analysis Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.sidebar-nav li').forEach(item => {
-                if (item.querySelector('ul')) {
-                    item.classList.add('has-submenu');
-                    const link = item.querySelector('a');
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const submenu = this.nextElementSibling;
-                        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-                        this.classList.toggle('active');
-                    });
-                }
-            });
-        });
-    </script>
-</head>
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <title>Stock Analysis Dashboard</title>  
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">  
+</head>  
 <body>  
-        <div class="dashboard-layout">
-            <aside class="sidebar">
-                <nav class="sidebar-nav">
-                    <ul>
-                        <li><a href="#" class="nav-link active">仪表盘</a></li>
-                        <li>
-                            <a href="#" class="nav-link">分析师</a>
-                            <ul>
-                                <li><a href="#" class="nav-link">技术分析</a></li>
-                                <li><a href="#" class="nav-link">基本面分析</a></li>
-                                <li><a href="#" class="nav-link">情绪分析</a></li>
-                            </ul>
-                        </li>
-                        <li>
-                            <a href="#" class="nav-link">历史数据</a>
-                            <ul>
-                                <li><a href="#" class="nav-link">A股数据</a></li>
-                                <li><a href="#" class="nav-link">美股数据</a></li>
-                            </ul>
-                        </li>
-                        <li><a href="#" class="nav-link">系统设置</a></li>
-                    </ul>
-                </nav>
-            </aside>
-            <main class="dashboard-container">
-                <header class="dashboard-header">
-                <h1>Stock Analysis Dashboard</h1>
-            </header>
+    <div class="container">  
+        <h1>Stock Analysis Dashboard</h1>  
         <form method="POST" action="/">  
-            <!-- Two-column stock inputs container -->
-            <div class="stock-inputs">
-                <div class="form-group">  
-                    <label for="ticker">Stock Ticker (e.g., AAPL):</label>
-                    <input type="text" name="ticker" id="ticker" placeholder="Enter stock code" required aria-label="Stock ticker input">
-                </div>
-    
-                <div class="form-group">  
-                    <label for="type">Stock Type:</label>
-                    {% set filter_options = ["A share", "US share", "Others"] %}
-                    {% set default_filter = "A share" %}
-                    <select class="stock-type-select" name="selected_filter" id="type" aria-label="Stock type selection">
-                        {% for option in filter_options %}
-                        <option value="{{ option }}"
-                            {% if option == default_filter %}selected{% endif %}>
-                            {{ option }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+            <div class="form-group">  
+                <label for="ticker">Stock Ticker (e.g., AAPL):</label>  
+                <input type="text" name="ticker" id="ticker" required>  
             </div>
 
-            <fieldset class="analyst-selection">
-                <legend>Select Analysts:</legend>
-                <div class="checkbox-container">
-                    {% set default_analyst = "technical_analyst" %}
-                    {% for analyst in ANALYSTS %}
-                    <div class="checkbox">
-                        <input type="checkbox" name="selected_analysts"
-                               value="{{ analyst }}" id="{{ analyst }}"
-                               {% if analyst == default_analyst %}checked{% endif %}>
-                        <label for="{{ analyst }}">  
-                            {{ analyst.replace('_', ' ').title() }}  
-                        </label>  
-                    </div>  
-                    {% endfor %}
-                </div>
+            <div class="form-group">  
+                <label for="type">Stock Type (e.g., US share):</label>  
+		{% set filter_options = ["A share", "US share", "Others"] %}
+		{% set default_filter = "A share" %}
+		<select class="form-select" name="selected_filter" id="type">  
+			{% for option in filter_options %}  
+			<option value="{{ option }}"   
+				{% if option == default_filter %}selected{% endif %}>  
+			{{ option }}  
+			</option>  
+			{% endfor %}  
+		</select> 
+            </div>
+
+	    <div class="form-group">  
+                <label>Select Analysts:</label>
+		{% set default_analyst = "technical_analyst" %}
+                {% for analyst in ANALYSTS %}
+                <div class="checkbox">
+                    <input type="checkbox" name="selected_analysts"
+                           value="{{ analyst }}" id="{{ analyst }}"
+			   {% if analyst == default_analyst %}checked{% endif %}>
+                    <label for="{{ analyst }}">  
+                        {{ analyst.replace('_', ' ').title() }}  
+                    </label>  
+                </div>  
+                {% endfor %}  
             </div>  
             
-                <button type="submit" class="analysis-btn">Analyze Stock</button>
+            <button type="submit" class="btn">Analyze Stock</button>  
         </form>  
         
-        <!-- 显示分析结果 -->
-        {% if results %}
-        <section class="analysis-results" aria-live="polite">
-            {{ results|safe }}
-        </section>
-        {% endif %}
-
-        <!-- 显示系统消息 -->
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        <aside class="system-messages" role="alert">
-            <ul>
-                {% for message in messages %}
-                <li>{{ message }}</li>
-                {% endfor %}
-            </ul>
-        </aside>
-        {% endif %}
-        {% endwith %}
-        </main>
+        <!-- 显示结果 -->  
+        {% if results %}  
+        <div class="results">  
+            {{ results|safe }}  
+        </div>  
+        {% endif %}  
+        
+        <!-- 显示错误信息 -->  
+        {% with messages = get_flashed_messages() %}  
+        {% if messages %}  
+        <div class="alert">  
+            <ul>  
+                {% for message in messages %}  
+                <li>{{ message }}</li>  
+                {% endfor %}  
+            </ul>  
+        </div>  
+        {% endif %}  
+        {% endwith %}  
+    </div>  
 </body>  
-</html>
+</html>  
