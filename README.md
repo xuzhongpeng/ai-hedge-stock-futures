@@ -9,8 +9,8 @@ Note: To use the Qwen series models, you need to manually install the [langchain
 1. 使用通义千问系列模型需要手动安装[langchain_qwen](https://github.com/mapicccy/langchain_qwen)，放置在langchain的同级目录即可，该包非官方提供
 2. akshare数据源有很大的局限性，目前仅适配了Technical Analyst(做技术分析的agent)和Sentiment Analyst(做情感分析的agent)。如果选择所有AI agents，最终的结论将会不可信
 
-点击链接加入我的企业“funcat量化交易”，一起开启量化交易之路。
-https://work.weixin.qq.com/join/StF6RP3MqpIF8jRx7B02mQ/hb_share_mng_index
+微信扫码加入我的企业“funcat量化交易”，一起开启量化交易之路：
+<img width="992" src="企业微信.png" />
 
 访问网站 http://mapicccy.online:7860 试用:
 <img width="992" src="test.png" />
