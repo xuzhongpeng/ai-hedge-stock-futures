@@ -10,7 +10,7 @@ Note: To use the Qwen series models, you need to manually install the [langchain
 2. akshare数据源有很大的局限性，目前仅适配了Technical Analyst(做技术分析的agent)和Sentiment Analyst(做情感分析的agent)。如果选择所有AI agents，最终的结论将会不可信
 
 微信扫码加入我的企业“funcat量化交易”，一起开启量化交易之路：
-<img width="640" src="企业微信.png" />
+![image](https://github.com/user-attachments/assets/0656e665-d31b-473e-b42c-dbdc7c92eaf0)
 
 访问网站 http://mapicccy.online:7860 试用:
 <img width="992" src="test.png" />
