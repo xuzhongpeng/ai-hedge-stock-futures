@@ -1,15 +1,18 @@
 """Helper functions for LLM"""
 
 import json
+import os
 from typing import TypeVar, Type, Optional, Any
 from pydantic import BaseModel
 from utils.progress import progress
 from dashscope import Generation
+from langchain_core.prompt_values import PromptValue, ChatPromptValue
+from langchain_core.messages import SystemMessage
 
 T = TypeVar('T', bound=BaseModel)
 
 def call_llm(
-    prompt: Any,
+    prompt: PromptValue,
     model_name: str,
     model_provider: str,
     pydantic_model: Type[T],
@@ -43,6 +46,29 @@ def call_llm(
             pydantic_model,
             method="json_mode",
         )
+    # 修改prompt的system，添加回答语言支持
+    language = os.getenv("SPEAK_LANGUAGE")
+    if language and isinstance(prompt, ChatPromptValue):
+        messages = list(prompt.messages)
+        language_instruction = f"Please speak with {language}."
+        
+        # 检查是否已有系统消息
+        has_system_message = False
+        for i, message in enumerate(messages):
+            if message.type == "system":
+                # 修改现有的系统消息，添加语言指令
+                messages[i] = SystemMessage(
+                    content=f"{message.content}\n\n{language_instruction}"
+                )
+                has_system_message = True
+                break
+        
+        # 如果没有系统消息，添加一个新的系统消息
+        if not has_system_message:
+            messages.insert(0, SystemMessage(content=language_instruction))
+        
+        # 创建新的 ChatPromptValue
+        prompt = ChatPromptValue(messages=messages)
     
     # Call the LLM with retries
     for attempt in range(max_retries):

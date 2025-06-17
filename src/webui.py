@@ -45,8 +45,6 @@ def run_analysis():
             portfolio=portfolio,
             show_reasoning=True,
             selected_analysts=selected_analysts,
-            model_name=model_name,
-            model_provider="QWen"
         )
 
         def convert_nan_to_null(obj):
@@ -63,6 +61,7 @@ def run_analysis():
         return json.dumps(result)
     except Exception as e:
         error_message = f"API Error in run_analysis: {str(e)}"
+        print(error_message)
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 @sock.route('/ws/logs')

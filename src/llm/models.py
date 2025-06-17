@@ -4,7 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
-from langchain_qwen import ChatQWen
+# from langchain_qwen import ChatQWen
 from enum import Enum
 from pydantic import BaseModel
 from typing import Tuple
@@ -45,6 +45,11 @@ class LLMModel(BaseModel):
 
 # Define available models
 AVAILABLE_MODELS = [
+    LLMModel(
+        display_name="custom openAI",
+        model_name="custom model",
+        provider=ModelProvider.OPENAI
+    ),
     LLMModel(
         display_name="[qwen] qwen-max-latest",
         model_name="qwen-max-latest",
@@ -145,6 +150,7 @@ def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | Ch
     elif model_provider == ModelProvider.OPENAI:
         # Get and validate API key
         api_key = os.getenv("OPENAI_API_KEY")
+        model_name = os.getenv("OPENAI_API_MODEL")
         if not api_key:
             # Print error to console
             print(f"API Key Error: Please make sure OPENAI_API_KEY is set in your .env file.")
@@ -161,12 +167,12 @@ def get_model(model_name: str, model_provider: ModelProvider) -> ChatOpenAI | Ch
         if not api_key:
             raise ValueError("Deepseek API key not found.  Please make sure DEEPSEEK_API_KEY is set in your .env file.")
         return ChatDeepSeek(model=model_name, api_key=api_key)
-    elif model_provider == ModelProvider.QWEN:
-        api_key = os.getenv("QWEN_API_KEY")
-        if not api_key:
-            print(f"API Key Error: Please make sure QWEN_API_KEY is set in your .env file.")
-            raise ValueError("QWen API key not found.  Please make sure QWEN_API_KEY is set in your .env file.")
-        return ChatQWen(model=model_name, api_key=api_key)
+    # elif model_provider == ModelProvider.QWEN:
+    #     api_key = os.getenv("QWEN_API_KEY")
+    #     if not api_key:
+    #         print(f"API Key Error: Please make sure QWEN_API_KEY is set in your .env file.")
+    #         raise ValueError("QWen API key not found.  Please make sure QWEN_API_KEY is set in your .env file.")
+    #     return ChatQWen(model=model_name, api_key=api_key)
     elif model_provider == ModelProvider.GEMINI:
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
